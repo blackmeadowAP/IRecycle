@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Логист — Я отходы{% endblock %}
+{% block subtitle %}Маршрут: локальные склады → завод{% endblock %}
+
+{% block content %}
+{% if ok %}
+<div class="mb-4 rounded-xl bg-eco-100 border border-eco-300 text-eco-800 p-4 text-sm">Статус рейса обновлён.</div>
+{% endif %}
+
+<section class="mb-6">
+  <h2 class="text-lg font-bold text-eco-800 mb-3">Локальные склады</h2>
+  <div class="grid gap-3">
+    {% for w in warehouses %}
+    <div class="bg-white rounded-xl border p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div>
+        <p class="font-bold">{{ w.name }}</p>
+        <p class="text-sm text-gray-600">{{ w.address }}</p>
+      </div>
+      <a href="https://yandex.ru/maps/?pt={{ w.longitude }},{{ w.latitude }}&z=14&l=map"
+         target="_blank"
+         class="text-center bg-eco-600 text-white font-bold py-2 px-4 rounded-xl shrink-0 text-sm">
+        На карте
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="mb-6">
+  <h2 class="text-lg font-bold text-eco-800 mb-3">Заявки завода на перевозку</h2>
+  {% if orders %}
+  <div class="space-y-5">
+    {% for o in orders %}
+    <article class="bg-white rounded-2xl shadow-md border border-eco-200 p-5">
+      <div class="flex flex-wrap justify-between gap-2">
+        <h3 class="font-bold text-lg">№{{ o.id }} · {{ o.factory_name }}</h3>
+        <span class="text-xs px-2 py-1 rounded-full font-semibold
+          {% if o.status == 'на_складе' %}bg-eco-200 text-eco-900
+          {% elif o.status == 'в_дороге' %}bg-blue-100 text-blue-900
+          {% else %}bg-gray-100{% endif %}">{{ o.status }}</span>
+      </div>
+
+      <dl class="grid sm:grid-cols-2 gap-2 text-sm mt-3">
+        <div><dt class="text-gray-500">Сырьё</dt><dd class="font-medium">{{ o.material }}, {{ o.quantity_tons }} т</dd></div>
+        <div><dt class="text-gray-500">Срок</dt><dd class="font-medium">{{ o.delivery_date }}</dd></div>
+        <div><dt class="text-gray-500">Собрано</dt><dd class="font-medium">{{ o.collected_tons }} / {{ o.quantity_tons }} т</dd></div>
+        <div><dt class="text-gray-500">Ваша награда</dt><dd class="font-bold text-eco-700">{{ "{:,.0f}".format(o.reward_logistics).replace(",", " ") }} ₽</dd></div>
+        <div class="sm:col-span-2"><dt class="text-gray-500">Адрес завода</dt>
+          <dd>{{ o.factory_address or o.factory_name }}</dd>
+        </div>
+      </dl>
+
+      {% if o.route_stops %}
+      <div class="mt-4 p-4 bg-eco-50 border border-eco-200 rounded-xl">
+        <p class="text-sm font-bold text-eco-800 mb-2">Маршрут следования</p>
+        <div class="flex flex-wrap items-center gap-2 text-sm">
+          {% for stop in o.route_stops %}
+          <div class="bg-white border rounded-lg px-3 py-2 shadow-sm">
+            <span class="text-eco-700 font-bold">{{ stop.stop_order }}.</span>
+            {{ stop.warehouse_name }}
+            <span class="block text-xs text-gray-500">{{ stop.tons_at_stop }} т на складе</span>
+          </div>
+          {% if not loop.last %}<span class="text-eco-600 font-bold text-lg">→</span>{% endif %}
+          {% endfor %}
+          <span class="text-eco-600 font-bold text-lg">→</span>
+          <div class="bg-eco-800 text-white rounded-lg px-3 py-2">
+            🏭 {{ o.factory_name }}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="flex flex-wrap gap-2 mt-4">
+        <a href="{{ o.route_url }}"
+           target="_blank"
+           class="flex-1 min-w-[140px] text-center bg-eco-600 hover:bg-eco-700 text-white font-bold py-3 px-4 rounded-xl">
+          Построить маршрут на карте
+        </a>
+      </div>
+
+      <div class="mt-4 flex flex-wrap gap-2">
+        {% if o.status == 'на_складе' %}
+        <form method="post" class="inline">
+          <input type="hidden" name="order_id" value="{{ o.id }}">
+          <input type="hidden" name="action" value="take">
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm">
+            Забрать со складов
+          </button>
+        </form>
+        {% elif o.status == 'в_дороге' %}
+        <form method="post" class="inline" onsubmit="return confirm('Завод получил сырьё?')">
+          <input type="hidden" name="order_id" value="{{ o.id }}">
+          <input type="hidden" name="action" value="complete">
+          <button type="submit" class="bg-eco-800 hover:bg-eco-900 text-white font-bold py-2.5 px-4 rounded-xl text-sm">
+            Доставлено на завод
+          </button>
+        </form>
+        {% elif o.status == 'сбор' %}
+        <p class="text-sm text-amber-700">Ожидание сбора: {{ o.collected_tons }} / {{ o.quantity_tons }} т</p>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-gray-500 text-sm">Нет заказов для логистики.</p>
+  {% endif %}
+</section>
+
+{% if completed %}
+<section>
+  <h2 class="text-lg font-bold text-eco-800 mb-3">Завершённые рейсы (демо)</h2>
+  <div class="space-y-3">
+    {% for o in completed %}
+    <div class="bg-white rounded-xl border p-4 text-sm">
+      <p class="font-medium">№{{ o.id }} {{ o.factory_name }} — {{ "{:,.0f}".format(o.reward_logistics).replace(",", " ") }} ₽</p>
+      {% if o.route_stops %}
+      <p class="text-gray-500 mt-1">
+        {% for stop in o.route_stops %}{{ stop.warehouse_name }}{% if not loop.last %} → {% endif %}{% endfor %}
+        → {{ o.factory_name }}
+      </p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Я отходы{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            eco: {
+              50: '#f0fdf4', 100: '#dcfce7', 200: '#bbf7d0',
+              500: '#22c55e', 600: '#16a34a', 700: '#15803d',
+              800: '#166534', 900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-eco-50 to-eco-100 text-gray-800">
+
+  <header class="bg-eco-800 text-white shadow-lg">
+    <div class="max-w-4xl mx-auto px-4 py-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <a href="{{ url_for('home') }}" class="hover:opacity-90">
+            <p class="text-eco-200 text-xs font-medium uppercase tracking-wide">Демо-платформа</p>
+            <h1 class="text-xl font-bold">Я отходы</h1>
+          </a>
+          <p class="text-eco-100 text-sm mt-0.5">{% block subtitle %}{% endblock %}</p>
+        </div>
+        <nav class="flex flex-wrap gap-2 text-sm">
+          <a href="{{ url_for('factory') }}" class="px-3 py-1.5 rounded-lg bg-eco-700 hover:bg-eco-600">Завод</a>
+          <a href="{{ url_for('supplier') }}" class="px-3 py-1.5 rounded-lg bg-eco-700 hover:bg-eco-600">ИП</a>
+          <a href="{{ url_for('logistics') }}" class="px-3 py-1.5 rounded-lg bg-eco-700 hover:bg-eco-600">Логист</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 py-6">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="max-w-4xl mx-auto px-4 py-6 text-center text-sm text-gray-500">
+    Демо «Солома» — {{ now_year }} · Я отходы
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

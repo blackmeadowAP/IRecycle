@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Я отходы — Пилорама</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            eco: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-eco-50 to-eco-100 text-gray-800">
+
+  <header class="bg-eco-700 text-white shadow-lg">
+    <div class="max-w-lg mx-auto px-4 py-5">
+      <p class="text-eco-200 text-sm font-medium">Экологическая платформа</p>
+      <h1 class="text-2xl font-bold tracking-tight">Я отходы</h1>
+      <p class="text-eco-100 text-sm mt-1">Пилорама — отправка заявки на вывоз опилок</p>
+    </div>
+  </header>
+
+  <main class="max-w-lg mx-auto px-4 py-6 space-y-5">
+
+    <section class="bg-white rounded-2xl shadow-md p-5 border border-eco-200">
+      <h2 class="text-lg font-semibold text-eco-800 mb-4">Новая заявка</h2>
+
+      <form id="zayavka-form" class="space-y-4">
+
+        <div>
+          <label for="nazvanie" class="block text-sm font-medium text-gray-700 mb-1">
+            Название пилорамы
+          </label>
+          <input
+            type="text"
+            id="nazvanie"
+            name="nazvanie"
+            placeholder="Например: Пилорама «Берёзка»"
+            required
+            class="w-full rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-eco-500 focus:border-eco-500"
+          >
+        </div>
+
+        <div>
+          <label for="obem" class="block text-sm font-medium text-gray-700 mb-1">
+            Объём опилок (м³)
+          </label>
+          <input
+            type="number"
+            id="obem"
+            name="obem"
+            min="0.1"
+            step="0.1"
+            placeholder="10.5"
+            required
+            class="w-full rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-eco-500 focus:border-eco-500"
+          >
+        </div>
+
+        <div class="rounded-xl bg-eco-50 border border-eco-200 p-4">
+          <p class="text-sm font-medium text-eco-800 mb-2">Геолокация</p>
+          <p id="coords-text" class="text-sm text-gray-600 mb-3">
+            Нажмите кнопку, чтобы определить координаты вашего телефона.
+          </p>
+          <button
+            type="button"
+            id="geo-btn"
+            class="w-full bg-white border-2 border-eco-600 text-eco-700 font-semibold py-3 rounded-xl hover:bg-eco-50 active:scale-[0.98] transition"
+          >
+            📍 Поделиться локацией
+          </button>
+          <input type="hidden" id="latitude" name="latitude">
+          <input type="hidden" id="longitude" name="longitude">
+        </div>
+
+        <button
+          type="submit"
+          id="submit-btn"
+          disabled
+          class="w-full bg-eco-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-eco-700 active:scale-[0.98] transition disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Отправить заявку в систему
+        </button>
+
+      </form>
+    </section>
+
+    <div id="message" class="hidden rounded-xl p-4 text-sm font-medium"></div>
+
+    <a
+      href="/dashboard"
+      class="block text-center text-eco-700 font-medium underline underline-offset-2"
+    >
+      Перейти к экрану завода / водителя →
+    </a>
+
+  </main>
+
+  <script>
+    const geoBtn = document.getElementById('geo-btn');
+    const submitBtn = document.getElementById('submit-btn');
+    const coordsText = document.getElementById('coords-text');
+    const latInput = document.getElementById('latitude');
+    const lngInput = document.getElementById('longitude');
+    const form = document.getElementById('zayavka-form');
+    const messageBox = document.getElementById('message');
+
+    function showMessage(text, isError) {
+      messageBox.textContent = text;
+      messageBox.className = 'rounded-xl p-4 text-sm font-medium ' +
+        (isError
+          ? 'bg-red-50 text-red-700 border border-red-200'
+          : 'bg-eco-100 text-eco-800 border border-eco-300');
+      messageBox.classList.remove('hidden');
+    }
+
+    geoBtn.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        showMessage('Геолокация не поддерживается вашим браузером.', true);
+        return;
+      }
+
+      geoBtn.textContent = '⏳ Определяем координаты...';
+      geoBtn.disabled = true;
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          latInput.value = lat;
+          lngInput.value = lng;
+          coordsText.textContent = `Координаты: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+          geoBtn.textContent = '✅ Локация получена';
+          geoBtn.classList.replace('border-eco-600', 'border-eco-500');
+          submitBtn.disabled = false;
+        },
+        (error) => {
+          geoBtn.disabled = false;
+          geoBtn.textContent = '📍 Поделиться локацией';
+
+          let text = 'Не удалось получить локацию.';
+          if (error.code === error.PERMISSION_DENIED) {
+            text = 'Разрешите доступ к геолокации в настройках браузера.';
+          }
+          showMessage(text, true);
+        },
+        { enableHighAccuracy: true, timeout: 15000 }
+      );
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      if (!latInput.value || !lngInput.value) {
+        showMessage('Сначала поделитесь локацией.', true);
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Отправка...';
+
+      try {
+        const response = await fetch('/api/zayavki', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nazvanie_piloramy: document.getElementById('nazvanie').value,
+            obem_opilok: document.getElementById('obem').value,
+            latitude: latInput.value,
+            longitude: lngInput.value,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || 'Ошибка отправки');
+        }
+
+        showMessage(`Заявка №${data.id} успешно отправлена! Завод увидит её в списке.`, false);
+        form.reset();
+        latInput.value = '';
+        lngInput.value = '';
+        coordsText.textContent = 'Нажмите кнопку, чтобы определить координаты вашего телефона.';
+        geoBtn.textContent = '📍 Поделиться локацией';
+        geoBtn.disabled = false;
+      } catch (err) {
+        showMessage(err.message, true);
+        submitBtn.disabled = false;
+      }
+
+      submitBtn.textContent = 'Отправить заявку в систему';
+    });
+  </script>
+
+</body>
+</html>

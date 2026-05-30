@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Завод — Я отходы{% endblock %}
+{% block subtitle %}Размещение заказа на солому{% endblock %}
+
+{% block content %}
+{% if ok %}
+<div class="mb-4 rounded-xl bg-eco-100 border border-eco-300 text-eco-800 p-4 text-sm font-medium">
+  Заказ размещён. ИП увидят его на своих складах, логист — после сбора объёма.
+</div>
+{% endif %}
+{% if error %}
+<div class="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 p-4 text-sm">{{ error }}</div>
+{% endif %}
+
+<section class="bg-white rounded-2xl shadow-md border border-eco-200 p-5 mb-6">
+  <h2 class="text-lg font-bold text-eco-800 mb-4">Новый заказ на солому</h2>
+  <form method="post" class="space-y-4">
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Название завода</label>
+        <input name="factory_name" required placeholder="Завод «БиоТопливо»"
+          class="w-full rounded-xl border px-4 py-2.5 focus:ring-2 focus:ring-eco-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Срок поставки на завод</label>
+        <input type="date" name="delivery_date" required
+          class="w-full rounded-xl border px-4 py-2.5 focus:ring-2 focus:ring-eco-500">
+      </div>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Объём, тонн</label>
+        <input type="number" name="quantity_tons" min="1" step="0.1" required value="30"
+          class="w-full rounded-xl border px-4 py-2.5 focus:ring-2 focus:ring-eco-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Сырьё</label>
+        <input readonly value="Солома" class="w-full rounded-xl border bg-gray-50 px-4 py-2.5 text-gray-600">
+      </div>
+    </div>
+
+    <div class="grid sm:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm font-medium mb-1">Предоплата ИП, ₽</label>
+        <input type="number" name="prepay_amount" min="0" required value="150000"
+          class="w-full rounded-xl border px-4 py-2.5 focus:ring-2 focus:ring-eco-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Цена ИП, ₽/т</label>
+        <input type="number" name="reward_supplier_per_ton" min="0" required value="2500"
+          class="w-full rounded-xl border px-4 py-2.5 focus:ring-2 focus:ring-eco-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Награда логисту, ₽</label>
+        <input type="number" name="reward_logistics" min="0" required value="45000"
+          class="w-full rounded-xl border px-4 py-2.5 focus:ring-2 focus:ring-eco-500">
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-1">Основной склад сбора</label>
+      <select name="warehouse_id" required class="w-full rounded-xl border px-4 py-2.5 focus:ring-2 focus:ring-eco-500">
+        {% for w in warehouses %}
+        <option value="{{ w.id }}">{{ w.name }} — {{ w.address }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium mb-1">Адрес доставки (завод)</label>
+      <input name="factory_address" placeholder="Владимирская обл., промзона"
+        class="w-full rounded-xl border px-4 py-2.5 focus:ring-2 focus:ring-eco-500">
+    </div>
+
+    <div class="rounded-xl bg-eco-50 border border-eco-200 p-4">
+      <p class="text-sm font-medium text-eco-800 mb-2">Координаты завода</p>
+      <div class="grid grid-cols-2 gap-3">
+        <input name="factory_lat" id="factory_lat" placeholder="Широта" required
+          class="rounded-xl border px-4 py-2.5" value="55.579">
+        <input name="factory_lng" id="factory_lng" placeholder="Долгота" required
+          class="rounded-xl border px-4 py-2.5" value="42.052">
+      </div>
+    </div>
+
+    <button type="submit" class="w-full bg-eco-600 hover:bg-eco-700 text-white font-bold py-3.5 rounded-xl shadow-lg">
+      Разместить заказ
+    </button>
+  </form>
+</section>
+
+<section class="bg-white rounded-2xl shadow-md border border-eco-200 p-5 mb-6">
+  <h2 class="text-lg font-bold text-eco-800 mb-3">Заказы завода (демо)</h2>
+  {% if orders %}
+  <div class="space-y-4">
+    {% for o in orders %}
+    <article class="border border-gray-200 rounded-xl p-4">
+      <div class="flex flex-wrap justify-between gap-2">
+        <span class="font-bold">№{{ o.id }} · {{ o.factory_name }}</span>
+        <span class="text-xs px-2 py-1 rounded-full bg-eco-100 text-eco-800 font-semibold">{{ o.status }}</span>
+      </div>
+      <p class="text-sm text-gray-600 mt-1">
+        <strong>{{ o.material }}</strong> · {{ o.quantity_tons }} т · до {{ o.delivery_date }}
+      </p>
+      <p class="text-sm mt-1">Собрано: <strong>{{ o.collected_tons }}</strong> / {{ o.quantity_tons }} т</p>
+      <p class="text-sm text-gray-500">
+        Цена ИП: {{ "{:,.0f}".format(o.reward_supplier_per_ton).replace(",", " ") }} ₽/т ·
+        Логист: {{ "{:,.0f}".format(o.reward_logistics).replace(",", " ") }} ₽
+      </p>
+      {% if o.factory_address %}
+      <p class="text-sm text-gray-500 mt-1">📍 {{ o.factory_address }}</p>
+      {% endif %}
+      {% if o.route_stops|length > 1 %}
+      <div class="mt-2 flex flex-wrap gap-1 text-xs">
+        {% for stop in o.route_stops %}
+        <span class="bg-gray-100 rounded px-2 py-1">{{ stop.warehouse_name }} ({{ stop.tons_at_stop }} т)</span>
+        {% if not loop.last %}<span>→</span>{% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="text-gray-500 text-sm">Заказов пока нет.</p>
+  {% endif %}
+</section>
+
+<section class="bg-white rounded-2xl shadow-md border border-eco-200 p-5">
+  <h2 class="text-lg font-bold text-eco-800 mb-3">Каталог ИП-поставщиков</h2>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-gray-500 border-b">
+          <th class="py-2 pr-2">ИП</th>
+          <th class="py-2 pr-2">Регион</th>
+          <th class="py-2 pr-2">Макс., т</th>
+          <th class="py-2 pr-2">Сдал</th>
+          <th class="py-2">Доступно</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in suppliers %}
+        <tr class="border-b border-gray-100">
+          <td class="py-2 font-medium">{{ s.name }}</td>
+          <td class="py-2 text-gray-600">{{ s.location_hint }}</td>
+          <td class="py-2">{{ s.capacity_tons }}</td>
+          <td class="py-2">{{ s.delivered_tons }}</td>
+          <td class="py-2 text-eco-700 font-semibold">{{ s.available_tons }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

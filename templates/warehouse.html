@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Склад — Я отходы{% endblock %}
+{% block subtitle %}Учёт сданного сырья и поставок от ИП{% endblock %}
+
+{% block content %}
+{% if ok %}
+<div class="mb-4 rounded-xl bg-eco-100 border border-eco-300 text-eco-800 p-4 text-sm">Поставка принята на склад.</div>
+{% endif %}
+
+<section class="mb-6">
+  <h2 class="text-lg font-bold text-eco-800 mb-3">Промежуточные склады</h2>
+  {% for w in warehouses %}
+  <div class="bg-white rounded-2xl border border-eco-200 p-4 mb-3">
+    <p class="font-bold">{{ w.name }}</p>
+    <p class="text-sm text-gray-600">{{ w.address }}</p>
+    <p class="text-xs text-gray-400 mt-1">{{ w.latitude }}, {{ w.longitude }}</p>
+    <a href="https://yandex.ru/maps/?pt={{ w.longitude }},{{ w.latitude }}&z=15&l=map"
+       target="_blank" class="text-sm text-eco-700 underline mt-2 inline-block">Карта</a>
+  </div>
+  {% endfor %}
+</section>
+
+{% for o in orders %}
+<section class="bg-white rounded-2xl shadow-md border border-eco-200 p-5 mb-5">
+  <div class="flex flex-wrap justify-between gap-2 mb-2">
+    <h3 class="font-bold text-lg">Заказ №{{ o.id }} · {{ o.material }}</h3>
+    <span class="text-xs px-2 py-1 rounded-full bg-eco-100 font-semibold">{{ o.status }}</span>
+  </div>
+  <p class="text-sm text-gray-600">{{ o.factory_name }} · план {{ o.quantity_tons }} т</p>
+
+  <div class="mt-3 mb-4">
+    <div class="flex justify-between text-sm mb-1">
+      <span>На складе</span>
+      <span class="font-bold">{{ o.collected_tons }} / {{ o.quantity_tons }} т</span>
+    </div>
+    {% set pct = (o.collected_tons / o.quantity_tons * 100) if o.quantity_tons else 0 %}
+    <div class="h-3 bg-gray-200 rounded-full overflow-hidden">
+      <div class="h-full bg-eco-500 rounded-full" style="width: {{ [pct, 100]|min }}%"></div>
+    </div>
+  </div>
+
+  <h4 class="text-sm font-semibold text-gray-700 mb-2">Поставки от ИП</h4>
+  {% if o.deliveries %}
+  <ul class="space-y-3">
+    {% for d in o.deliveries %}
+    <li class="border rounded-xl p-3 text-sm {% if d.status == 'принято' %}bg-eco-50 border-eco-200{% endif %}">
+      <div class="flex flex-wrap justify-between gap-2">
+        <span class="font-medium">{{ d.supplier_name }} — {{ d.quantity_tons }} т</span>
+        <span class="text-xs px-2 py-0.5 rounded-full {% if d.status == 'принято' %}bg-eco-200 text-eco-900{% else %}bg-amber-100 text-amber-900{% endif %}">
+          {{ d.status }}
+        </span>
+      </div>
+      <p class="text-gray-500 text-xs mt-1">{{ d.delivered_at }} · GPS: {{ "%.4f"|format(d.latitude) }}, {{ "%.4f"|format(d.longitude) }}</p>
+      {% if d.photo_filename %}
+      <a href="{{ url_for('static', filename='uploads/' + d.photo_filename) }}" target="_blank"
+         class="inline-block mt-2 text-eco-700 underline">Фото поставки</a>
+      {% endif %}
+      {% if d.status == 'сдано' %}
+      <form method="post" action="{{ url_for('warehouse_accept', delivery_id=d.id) }}" class="mt-2">
+        <button type="submit" class="text-xs bg-eco-600 text-white px-3 py-1.5 rounded-lg">Принять на склад</button>
+      </form>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="text-gray-400 text-sm">Поставок пока нет.</p>
+  {% endif %}
+</section>
+{% endfor %}
+{% endblock %}

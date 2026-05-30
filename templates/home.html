@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Я отходы — Главная{% endblock %}
+{% block subtitle %}Агрегация заявок на переработку соломы{% endblock %}
+
+{% block content %}
+<section class="bg-white rounded-2xl shadow-md border border-eco-200 p-6 mb-6">
+  <h2 class="text-2xl font-bold text-eco-900 mb-3">Как работает система</h2>
+  <p class="text-gray-600 text-sm mb-4">
+    Платформа связывает три роли в одной цепочке: завод размещает заказ,
+    мелкие ИП сдают солому на локальные склады, крупный перевозчик забирает
+    груз с нескольких складов и везёт на завод.
+  </p>
+  <ol class="list-decimal list-inside space-y-2 text-gray-700 text-sm">
+    <li><strong>Завод-потребитель</strong> — объём, срок, цена за тонну, адрес доставки.</li>
+    <li><strong>ИП-поставщик</strong> — видит склады, оформляет заявку на объём, закрывает поставку с фото и GPS.</li>
+    <li><strong>Крупный перевозчик</strong> — видит заявку завода, склады с сырьём, награду и маршрут «склад → склад → завод».</li>
+  </ol>
+</section>
+
+<div class="grid sm:grid-cols-3 gap-4 mb-6">
+  <a href="{{ url_for('factory') }}" class="bg-eco-600 hover:bg-eco-700 text-white rounded-2xl p-5 shadow-lg transition">
+    <span class="text-2xl">🏭</span>
+    <h3 class="font-bold text-lg mt-2">Завод</h3>
+    <p class="text-eco-100 text-sm mt-1">Заказ на солому, цена, адрес завода</p>
+  </a>
+  <a href="{{ url_for('supplier') }}" class="bg-white border-2 border-eco-600 hover:bg-eco-50 rounded-2xl p-5 shadow transition">
+    <span class="text-2xl">🌾</span>
+    <h3 class="font-bold text-lg mt-2 text-eco-800">ИП</h3>
+    <p class="text-gray-600 text-sm mt-1">Заявки на малые объёмы, фото + геолокация</p>
+  </a>
+  <a href="{{ url_for('logistics') }}" class="bg-white border-2 border-eco-600 hover:bg-eco-50 rounded-2xl p-5 shadow transition">
+    <span class="text-2xl">🚛</span>
+    <h3 class="font-bold text-lg mt-2 text-eco-800">Логист</h3>
+    <p class="text-gray-600 text-sm mt-1">Маршрут через склады, награда за рейс</p>
+  </a>
+</div>
+
+{% if demo_order and route_preview %}
+<section class="bg-white rounded-2xl shadow-md border border-eco-200 p-5 mb-6">
+  <h2 class="text-lg font-bold text-eco-800 mb-2">Пример маршрута (демо)</h2>
+  <p class="text-sm text-gray-600 mb-3">
+    Заказ №{{ demo_order.id }} · {{ demo_order.factory_name }} · {{ demo_order.material }}, {{ demo_order.quantity_tons }} т
+  </p>
+  <div class="flex flex-wrap items-center gap-2 text-sm">
+    {% for stop in route_preview %}
+    <span class="bg-eco-50 border border-eco-200 rounded-lg px-3 py-2">
+      <span class="font-bold text-eco-800">{{ stop.stop_order }}.</span>
+      {{ stop.warehouse_name }}
+      <span class="text-gray-500">({{ stop.tons_at_stop }} т)</span>
+    </span>
+    {% if not loop.last %}<span class="text-eco-600 font-bold">→</span>{% endif %}
+    {% endfor %}
+    <span class="text-eco-600 font-bold">→</span>
+    <span class="bg-eco-800 text-white rounded-lg px-3 py-2 font-medium">
+      🏭 {{ demo_order.factory_name }}
+    </span>
+  </div>
+  <p class="text-xs text-gray-500 mt-3">
+    Награда логисту: {{ "{:,.0f}".format(demo_order.reward_logistics).replace(",", " ") }} ₽
+  </p>
+</section>
+{% endif %}
+
+<section class="bg-eco-50 border border-eco-200 rounded-2xl p-4 text-sm text-gray-600">
+  <p class="text-center">
+    В демо: {{ stats.orders }} заказ(ов) · {{ stats.warehouses }} склад(ов) ·
+    {{ stats.offers }} активных заявок ИП · {{ stats.deliveries }} поставок ·
+    {{ stats.suppliers }} ИП в каталоге
+  </p>
+</section>
+{% endblock %}
